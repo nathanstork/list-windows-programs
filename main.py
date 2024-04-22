@@ -47,6 +47,17 @@ def get_registry_programs(hive, flag):
     return programs
 
 
+def get_installed_programs():
+    installed_registry_programs = [
+        *get_registry_programs(winreg.HKEY_LOCAL_MACHINE, winreg.KEY_WOW64_64KEY),  # 64-bit programs
+        *get_registry_programs(winreg.HKEY_LOCAL_MACHINE, winreg.KEY_WOW64_32KEY),  # 32-bit programs
+        *get_registry_programs(winreg.HKEY_CURRENT_USER, 0)  # Additional registry key for current user
+    ]
+
+    # Remove duplicates and sort programs alphabetically, ignoring case
+    return sorted(list(dict.fromkeys(installed_registry_programs)), key=str.casefold)
+
+
 def get_executables_from_directory(path):
     results = []
 
@@ -77,15 +88,15 @@ def get_executables():
     return program_executables
 
 
-def get_installed_programs():
-    installed_registry_programs = [
-        *get_registry_programs(winreg.HKEY_LOCAL_MACHINE, winreg.KEY_WOW64_64KEY),  # 64-bit programs
-        *get_registry_programs(winreg.HKEY_LOCAL_MACHINE, winreg.KEY_WOW64_32KEY),  # 32-bit programs
-        *get_registry_programs(winreg.HKEY_CURRENT_USER, 0)  # Additional registry key for current user
-    ]
+def get_environment_variables():
+    environment_variables = []
 
-    # Remove duplicates and sort programs alphabetically, ignoring case
-    return sorted(list(dict.fromkeys(installed_registry_programs)), key=str.casefold)
+    environ = os.environ
+    # Format all environment variables in a readable way
+    for key, value in environ.items():
+        environment_variables.append(f'{key}={value}')
+
+    return environment_variables
 
 
 def write_to_txt_file(lines, filename='file'):
@@ -103,7 +114,7 @@ if __name__ == '__main__':
     # Print the number of installed programs in bright blue
     print(f'Found {Color.BLUE + str(len(installed_programs)) + Color.END} installed programs.')
     # Write programs to file
-    write_to_txt_file(installed_programs, 'installed_programs')
+    write_to_txt_file(installed_programs, 'programs')
 
     # Get executables
     executables = get_executables()
@@ -111,3 +122,12 @@ if __name__ == '__main__':
     print(f'Found {Color.YELLOW + str(len(executables)) + Color.END} additional executables.')
     # Write executables to file
     write_to_txt_file(executables, 'executables')
+
+    # Get environment variables
+    variables = get_environment_variables()
+    # Print the number of environment variables in purple
+    print(f'Found {Color.PURPLE + str(len(variables)) + Color.END} system variables.')
+    # Write environment variables to file
+    write_to_txt_file(variables, 'variables')
+
+    print(Color.GREEN + 'Done!' + Color.END)
