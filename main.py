@@ -1,4 +1,18 @@
+import os
 import winreg
+
+
+class Color:
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    DARKCYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'
 
 
 def get_registry_programs(hive, flag):
@@ -33,10 +47,34 @@ def get_registry_programs(hive, flag):
     return programs
 
 
-def get_programs_from_program_files():
-    # List all folders in the Program Files directory
+def get_executables_from_directory(path):
+    results = []
 
-    pass
+    try:
+        directories = os.listdir(path)
+        for directory in directories:
+            # Recursively search for an executable file with the same name as the directory
+            for root, dirs, files in os.walk(os.path.join(path, directory)):
+                for file in files:
+                    if file.endswith('.exe'):
+                        # print(Color.BOLD + directory + ' > ' + Color.END + root + '\\' + file)
+                        results.append(directory + ' > ' + root + '\\' + file)
+                        break
+    except FileNotFoundError:
+        return []
+
+    return results
+
+
+def get_executables():
+    program_executables = []
+    # Get executables from Program Files
+    program_executables += get_executables_from_directory(r'C:\Program Files')
+    # Get programs from Program Files (x86)
+    program_executables += get_executables_from_directory(r'C:\Program Files (x86)')
+    # Get programs from ProgramData
+    program_executables += get_executables_from_directory(r'C:\ProgramData')
+    return program_executables
 
 
 def get_installed_programs():
@@ -50,12 +88,12 @@ def get_installed_programs():
     return sorted(list(dict.fromkeys(installed_registry_programs)), key=str.casefold)
 
 
-def write_to_file(programs):
+def write_to_txt_file(lines, filename='file'):
     # Use UTF-8 encoding to support special characters
-    with open("installed_programs.txt", "w", encoding="utf-8") as file:
-        for p in programs:
-            file.write(p)
-            if p != programs[-1]:
+    with open(filename + '.txt', 'w', encoding='utf-8') as file:
+        for line in lines:
+            file.write(line)
+            if line != lines[-1]:
                 file.write("\n")
 
 
@@ -63,9 +101,13 @@ if __name__ == '__main__':
     # Get installed programs
     installed_programs = get_installed_programs()
     # Print the number of installed programs in bright blue
-    print(f"Found \033[94m{len(installed_programs)}\033[0m installed programs.")
-    # FOR TESTING PURPOSES: Print the list of installed programs
-    for program in installed_programs:
-        print(program)
-    # Write to file
-    write_to_file(installed_programs)
+    print(f'Found {Color.BLUE + str(len(installed_programs)) + Color.END} installed programs.')
+    # Write programs to file
+    write_to_txt_file(installed_programs, 'installed_programs')
+
+    # Get executables
+    executables = get_executables()
+    # Print the number of executables in bright blue
+    print(f'Found {Color.YELLOW + str(len(executables)) + Color.END} additional executables.')
+    # Write executables to file
+    write_to_txt_file(executables, 'executables')
